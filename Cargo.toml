@@ -2,12 +2,12 @@
 name = "ruhear"
 version = "0.1.0"
 edition = "2021"
-authors = ["aizcutei <aiz.cutei@gmail.com>"]
+authors = ["michalwarda <mw@grifel.dev>"]
 description = "A library for capturing audio from the system."
 license = "Apache-2.0"
 
-repository = "https://github.com/aizcutei/ruhear"
-documentation = "https://docs.rs/ruhear"
+repository = "https://github.com/qforge-dev/qruhear"
+documentation = "https://docs.rs/qruhear"
 keywords = ["audio", "capture"]
 categories = ["multimedia::audio"]
 
