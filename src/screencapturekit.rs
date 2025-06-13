@@ -90,6 +90,14 @@ impl RUHear {
         let config = SCStreamConfiguration::new()
             .set_captures_audio(true)
             .map_err(|e| anyhow::anyhow!("Failed to set captures_audio: {:?}", e))?;
+
+        let config = config
+            .set_excludes_current_process_audio(true)
+            .map_err(|e| anyhow::anyhow!("Failed to set excludes_current_process_audio: {:?}", e))?;
+
+        let config = config
+            .set_excludes_current_process_audio(true)
+            .map_err(|e| anyhow::anyhow!("Failed to set excludes_current_process_audio: {:?}", e))?;
         
         let mut stream = SCStream::new(&filter, &config);
         let output_handler = OutputHandler {
