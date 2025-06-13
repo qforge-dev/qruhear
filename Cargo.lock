@@ -781,6 +781,7 @@ name = "ruhear"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "core-foundation",
  "cpal",
  "screencapturekit",
 ]

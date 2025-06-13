@@ -3,18 +3,22 @@ use anyhow::Result;
 use screencapturekit::shareable_content::{SCDisplay, SCShareableContent};
 use screencapturekit::stream::content_filter::SCContentFilter;
 use screencapturekit::stream::output_type::SCStreamOutputType;
+use screencapturekit::stream::output_trait::SCStreamOutputTrait;
+use screencapturekit::stream::delegate_trait::SCStreamDelegateTrait;
 use screencapturekit::stream::{SCStream};
 use screencapturekit::output::CMSampleBuffer;
 use screencapturekit::stream::configuration::SCStreamConfiguration;
+use core_foundation::error::CFError;
 
 use std::sync::{Arc, Mutex};
 
 type RUBuffers = Vec<Vec<f32>>;
+
 struct ErrorHandler;
 
-impl StreamErrorHandler for ErrorHandler {
-    fn on_error(&self) {
-        println!("Stream Error!")
+impl SCStreamDelegateTrait for ErrorHandler {
+    fn did_stop_with_error(&self, _stream: SCStream, error: CFError) {
+        println!("Stream Error: {:?}", error);
     }
 }
 
@@ -22,16 +26,17 @@ struct OutputHandler {
     callback: Arc<Mutex<dyn FnMut(RUBuffers) + Send>>,
 }
 
-impl StreamOutput for OutputHandler {
+impl SCStreamOutputTrait for OutputHandler {
     fn did_output_sample_buffer(
         &self,
         sample_buffer: CMSampleBuffer,
         _of_type: SCStreamOutputType,
     ) {
-        let audio = sample_buffer.sys_ref.get_av_audio_buffer_list();
+        let audio = sample_buffer.get_audio_buffer_list().unwrap();
         let mut audio_buffers = Vec::new();
-        for channel in audio {
-            let data = channel.data;
+        for channel_index in 0..audio.num_buffers() {
+            let channel = audio.get(channel_index).unwrap();
+            let data = channel.data();
             let mut f32_data = Vec::new();
             for i in 0..data.len() / 4 {
                 let mut f32_bytes = [0u8; 4];
@@ -62,9 +67,9 @@ pub struct RUHear {
 
 impl RUHear {
     pub fn new(callback: Arc<Mutex<dyn FnMut(RUBuffers) + Send>>) -> Self {
-        let content = SCShareableContent::current();
-        let displays = content.displays;
-        let display = displays.clone().first().unwrap().to_owned();
+        let content = SCShareableContent::get().unwrap();
+        let displays = content.displays();
+        let display = displays.first().unwrap().to_owned();
         Self {
             callback: callback.clone(),
             device_list: displays
@@ -77,27 +82,26 @@ impl RUHear {
     }
 
     pub fn start(&mut self) -> Result<(), anyhow::Error> {
-        let params = match self.device.clone().unwrap() {
-            RUDevice::MacosDisplay(display) => InitParams::Display(display),
+        let display = match self.device.clone().unwrap() {
+            RUDevice::MacosDisplay(display) => display,
         };
-        let filter = SCContentFilter::new(params);
-        let config = SCStreamConfiguration {
-            width: 2,
-            height: 2,
-            captures_audio: true,
-            excludes_current_process_audio: true,
-            ..Default::default()
-        };
-        let mut stream = SCStream::new(filter, config, ErrorHandler {});
+        
+        let filter = SCContentFilter::new().with_display_excluding_windows(&display, &[]);
+        let config = SCStreamConfiguration::new()
+            .set_captures_audio(true)
+            .map_err(|e| anyhow::anyhow!("Failed to set captures_audio: {:?}", e))?;
+        
+        let mut stream = SCStream::new(&filter, &config);
         let output_handler = OutputHandler {
             callback: self.callback.clone(),
         };
-        stream.add_output(output_handler, SCStreamOutputType::Audio);
+        stream.add_output_handler(output_handler, SCStreamOutputType::Audio);
+        
         let result = stream.start_capture();
         self.stream = Some(stream);
         match result {
             Ok(_) => Ok(()),
-            Err(e) => Err(anyhow::anyhow!(e)),
+            Err(e) => Err(anyhow::anyhow!("Failed to start capture: {:?}", e)),
         }
     }
 
@@ -105,7 +109,7 @@ impl RUHear {
         if let Some(stream) = self.stream.take() {
             match stream.stop_capture() {
                 Ok(_) => Ok(()),
-                Err(e) => Err(anyhow::anyhow!(e)),
+                Err(e) => Err(anyhow::anyhow!("Failed to stop capture: {:?}", e)),
             }
         } else {
             anyhow::bail!("Stream not found")
