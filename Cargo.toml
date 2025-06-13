@@ -1,6 +1,6 @@
 [package]
 name = "qruhear"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["michalwarda <mw@grifel.dev>"]
 description = "A library for capturing audio from the system."
