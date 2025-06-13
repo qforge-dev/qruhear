@@ -1,15 +1,12 @@
 #![allow(dead_code)]
 use anyhow::Result;
-use screencapturekit::{
-    cm_sample_buffer::CMSampleBuffer,
-    sc_content_filter::{InitParams, SCContentFilter},
-    sc_display::SCDisplay,
-    sc_error_handler::StreamErrorHandler,
-    sc_output_handler::{SCStreamOutputType, StreamOutput},
-    sc_shareable_content::SCShareableContent,
-    sc_stream::SCStream,
-    sc_stream_configuration::SCStreamConfiguration,
-};
+use screencapturekit::shareable_content::{SCDisplay, SCShareableContent};
+use screencapturekit::stream::content_filter::SCContentFilter;
+use screencapturekit::stream::output_type::SCStreamOutputType;
+use screencapturekit::stream::{SCStream};
+use screencapturekit::output::CMSampleBuffer;
+use screencapturekit::stream::configuration::SCStreamConfiguration;
+
 use std::sync::{Arc, Mutex};
 
 type RUBuffers = Vec<Vec<f32>>;
