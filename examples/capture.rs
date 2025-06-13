@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use std::thread::sleep;
 use std::time::Duration;
 
-use ruhear::{rucallback, RUBuffers, RUHear};
+use qruhear::{rucallback, RUBuffers, RUHear};
 
 fn main() {
     let callback = |audio_buffers: RUBuffers| {

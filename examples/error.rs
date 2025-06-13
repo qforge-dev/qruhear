@@ -1,4 +1,4 @@
-use ruhear::{rucallback, RUBuffers, RUHear};
+use qruhear::{rucallback, RUBuffers, RUHear};
 use std::sync::{Arc, Mutex};
 
 fn main() {
